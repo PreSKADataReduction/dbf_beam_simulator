@@ -21,7 +21,7 @@ use scorus::{
 };
 
 pub fn main(){
-    let mut context=necrs::NecContext::new();
+    let mut context=necrs::RawNecContext::new();
     let nsegs=vec![39,37,35,33,31,29,27,25,23,21,19,17,15,13,11];
     let coords=vec![
         vec![0.000000,-1.529613,0.000000,0.000000,1.529613,0.000000],
@@ -75,7 +75,7 @@ pub fn main(){
         context.nec_tl_card(t1, s1, t2, s2, tl_impedance, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
-    context.nec_fr_card(0, 1, 120.0, 0.0);
+    context.nec_fr_card(0, 1, 60.0, 0.0);
     
 
 
@@ -88,15 +88,14 @@ pub fn main(){
     let dphi=360.0/(nphi-1) as f64;
     let dtheta=180.0/(ntheta-1) as f64;
     
-    context.nec_rp_card(0, ntheta as i32, nphi as i32, 1, 0, 0, 0, 0.0, 0.0, dtheta, dphi, 0.0, 0.0);
+    //context.nec_rp_card(0, ntheta as i32, nphi as i32, 1, 0, 0, 0, 0.0, 0.0, dtheta, dphi, 0.0, 0.0);
+    let (thetas, phis)=context.rp_from_npix(npix*16, 0, 1, 0, 0, 0, 0.0, 0.0);
 
     let mut data=vec![0.0; npix];
     let mut wgt=vec![0.0; npix];
 
-    for i in 0..ntheta/2{
-        let theta=dtheta*i as f64;
-        for j in 0..nphi{
-            let phi=dphi*j as f64;
+    for (i, &theta) in thetas.iter().enumerate(){
+        for (j, &phi) in phis.iter().enumerate(){
             let g=(context.nec_gain(0, i as i32, j as i32)/10.0).exp();
             let dir=SphCoord::new(theta.to_radians(), phi.to_radians());
             let (pix, w)=get_interpol_ring(nside, dir);

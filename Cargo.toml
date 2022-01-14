@@ -9,6 +9,9 @@ edition = "2021"
 necrs={path='../necrs'}
 scorus={path='../scorus'}
 num='0.4.0'
+pest = '2.1.3'
+pest_derive='2.1.0'
+
 
 [dependencies.healpix_fits]
 path = '../healpix_fits'
