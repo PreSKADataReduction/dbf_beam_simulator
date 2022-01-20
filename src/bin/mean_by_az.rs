@@ -1,4 +1,4 @@
-extern crate lpda_beam_healpix;
+extern crate dbf_beam_simulator;
 use clap::{
     App, Arg
 };
@@ -7,7 +7,7 @@ use healpix_fits::{
     read_map
 };
 
-use lpda_beam_healpix::{
+use dbf_beam_simulator::{
     integrate_az
 };
 

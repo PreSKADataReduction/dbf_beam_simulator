@@ -14,9 +14,9 @@ use healpix_fits::{
     write_map
 };
 
-extern crate lpda_beam_healpix;
+extern crate dbf_beam_simulator;
 
-use lpda_beam_healpix::{
+use dbf_beam_simulator::{
     integrate_az
 };
 

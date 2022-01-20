@@ -1,4 +1,4 @@
-extern crate lpda_beam_healpix as lpda;
+extern crate dbf_beam_simulator as lpda;
 
 
 use lpda::{
