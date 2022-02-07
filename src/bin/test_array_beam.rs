@@ -1,13 +1,9 @@
+#![allow(unused_variables)]
+
 extern crate dbf_beam_simulator as lpda;
 
 
-use lpda::{
-    calc_array_beam
-};
 
-use healpix_fits::{
-    write_map
-};
 
 fn main(){
     let nside=256;

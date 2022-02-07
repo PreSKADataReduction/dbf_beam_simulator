@@ -5,19 +5,12 @@ use clap::{
 };
 
 use std::{
-        io::{
-        Write
-    }
-    , fs::{
+    fs::{
         File
     }
 };
 
 
-use serde_yaml::{
-    from_reader
-    , to_writer
-};
 
 use lpda::{
     calc_array_beam

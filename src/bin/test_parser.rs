@@ -43,10 +43,7 @@ pub fn main(){
     let npix=nside2npix(nside);
     let angular_resolution=(4.0*f64::PI()/npix as f64).sqrt().to_degrees();
     println!("{}", angular_resolution);
-    let nphi=(360.0/angular_resolution*4.0) as usize+1;
-    let ntheta=(nphi-1)/2+1;
-    let dphi=360.0/(nphi-1) as f64;
-    let dtheta=180.0/(ntheta-1) as f64;
+    
     
     //context.nec_rp_card(0, ntheta as i32, nphi as i32, 1, 0, 0, 0, 0.0, 0.0, dtheta, dphi, 0.0, 0.0);
     let (thetas, phis)=context.rp_from_npix(npix*4, 0, 1, 0, 0, 0, 0.0, 0.0);

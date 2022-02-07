@@ -5,43 +5,20 @@ use clap::{
 };
 
 use std::{
-        io::{
-        Write
-    }
-    , fs::{
+    fs::{
         File
     }
 };
 
 
-use serde_yaml::{
-    from_reader
-    , to_writer
-};
-
 use lpda::{
-    calc_array_beam
-    , calc_phase_from_pointing
+    calc_phase_from_pointing
     , ArrayCfg
     , AntCfg
     , calc_averaged_array_beam
     , averaged_beam_to_healpix
 };
 
-use scorus::{
-    healpix::{
-        utils::{
-            npix2nside
-        }
-        , rotation::rotate_ring
-    }
-    , coordinates::{
-        rotation3d::{
-            RotMatrix
-        }
-        , vec3d::Vec3d
-    }
-};
 
 use healpix_fits::{
     write_map

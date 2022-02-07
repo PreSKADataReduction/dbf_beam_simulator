@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 extern crate dbf_beam_simulator as lpda;
 use clap::{
     App
@@ -9,27 +10,20 @@ use rand::{
 };
 
 use std::{
-        io::{
-        Write
-    }
-    , fs::{
+    fs::{
         File
     }
 };
 
 
 use serde_yaml::{
-    from_reader
-    , to_writer
+    to_writer
 };
 
 use lpda::{
-    calc_array_beam
-    , calc_phase_from_pointing
+    calc_phase_from_pointing
     , ArrayCfg
     , AntCfg
-    , calc_averaged_array_beam
-    , averaged_beam_to_healpix
     , beam_opt_func_obj2
     , integrate_az
     , zenith_ns_sym_array
@@ -37,19 +31,7 @@ use lpda::{
 };
 
 use scorus::{
-    healpix::{
-        utils::{
-            npix2nside
-        }
-        , rotation::rotate_ring
-    }
-    , coordinates::{
-        rotation3d::{
-            RotMatrix
-        }
-        , vec3d::Vec3d
-    }
-    , opt::{
+    opt::{
         powell::fmin
         , tolerance::Tolerance
         , pso::{
@@ -61,8 +43,7 @@ use scorus::{
 };
 
 use healpix_fits::{
-    write_map
-    , read_map
+    read_map
 };
 
 fn main(){
