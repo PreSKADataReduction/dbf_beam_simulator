@@ -24,9 +24,11 @@ stdenv.mkDerivation {
     libGLU.out
     freeglut
     freeglut.out
+    libsForQt5.qt5.qtwayland
     ];
     hardeningDisable = [ "all" ];
     #buildInputs = [gcc-unwrapped gcc-unwrapped.out gcc-unwrapped.lib];
     LIBCLANG_PATH = llvmPackages.libclang.lib+"/lib";
     LD_LIBRARY_PATH= libGL+"/lib";
+    QT_QPA_PLATFORM="wayland";
 }

@@ -23,15 +23,20 @@ use scorus::{
             nside2npix
             , npix2nside
             , nside2nring
+            , nring2nside
         }
         , pix::{
             pix2vec_ring, pix2ring_ring
             , ring2z_ring
         }
+        , rotation::rotate_ring
     }
     , coordinates::{
         SphCoord
         ,Vec3d
+        , rotation3d::{
+            RotMatrix
+        }
     }
 };
 
@@ -92,3 +97,74 @@ pub fn integrate_az(hmap: &[f64])->(Vec<f64>, Vec<usize>, Vec<f64>){
     let theta=(1..=nring).map(|iring| ring2z_ring::<f64>(nside, iring).acos()).collect();
     (mean_values, wgt, theta)
 }
+
+pub fn calc_averaged_array_beam(lat_deg: f64, ant_beam: &[f64], x_list: &[f64], y_list: &[f64], z_list: &[f64], w_list: &[f64], phi_list:&[f64], freq_hz: f64)->(Vec<f64>, Vec<usize>, Vec<f64>)
+{
+    let nside=npix2nside(ant_beam.len());
+    let array_beam=calc_array_beam(nside, x_list, y_list, z_list, w_list, phi_list, freq_hz, true);
+    let total_beam:Vec<f64>=array_beam.iter().zip(ant_beam.iter()).map(|(&a, &b)|{a*b}).collect();
+    let rot=RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 1.0, 0.0), (90.0-lat_deg).to_radians())
+    *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), -90_f64.to_radians());
+    let rotated_beam=rotate_ring(&total_beam, &rot);
+    let (mean_beam, weight, theta)=integrate_az(&rotated_beam);
+    (mean_beam, weight, theta)
+}
+
+pub fn averaged_beam_to_healpix(beam: &[f64])->Vec<f64>{
+    let nring=beam.len();
+    let nside=nring2nside(nring);
+    let npix=nside2npix(nside);
+    (0..npix).map(|ipix|{
+        beam[pix2ring_ring(nside, ipix)-1]
+    }).collect()
+}
+
+pub fn beam_opt_func_obj1(beam1: &[f64], beam2: &[f64], wgt: &[f64])->f64{
+    assert_eq!(beam1.len(), wgt.len());
+    assert_eq!(beam2.len(), wgt.len());
+    let s1=beam1.iter().zip(wgt.iter()).map(|(&a,&b)|{a*b}).sum::<f64>();
+    let s2=beam2.iter().zip(wgt.iter()).map(|(&a,&b)|{a*b}).sum::<f64>();
+    beam1.iter().zip(beam2.iter().zip(wgt.iter())).map(|(&b1, (&b2, &w))|{
+        (b1/s1-b2/s2)*w
+    }).map(|x|x.powi(2)).sum::<f64>()
+}
+
+pub fn beam_opt_func_obj2(beam0: &[f64], 
+    lat_deg: f64, ant_beam: &[f64], 
+    x_list: &[f64], y_list: &[f64], z_list: &[f64], w_list: &[f64], phi_list:&[f64], freq_hz: f64)->f64
+{
+    let (mean_beam, weight, _theta)=calc_averaged_array_beam(lat_deg, ant_beam, x_list, y_list, z_list, w_list, phi_list, freq_hz);
+    let weight:Vec<_>=weight.into_iter().map(|x| x as f64).collect();
+    beam_opt_func_obj1(&beam0, &mean_beam, &weight)
+}
+
+pub fn zenith_ns_sym_array(y: &[f64], w: &[f64])->(Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>){
+    let mut ant_x=vec![0.0];
+    let mut ant_y=vec![0.0];
+    let mut ant_z=vec![0.0];
+    let mut ant_w=vec![1.0];
+
+    for (&y1, &w1) in y.iter().zip(w.iter()){
+        ant_x.push(0.0);
+        ant_y.push(y1);
+        ant_z.push(0.0);
+        ant_w.push(w1);
+
+        ant_x.push(0.0);
+        ant_y.push(-y1);
+        ant_z.push(0.0);
+        ant_w.push(w1);
+    }
+    (ant_x, ant_y, ant_z, ant_w)
+}
+
+pub fn sym_weight(w: &[f64])->Vec<f64>{
+    let mut ant_w=vec![1.0];
+
+    for &w1 in w{
+        ant_w.push(w1);
+        ant_w.push(w1);
+    }
+    ant_w
+}
+
