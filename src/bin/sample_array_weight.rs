@@ -7,6 +7,10 @@ use clap::{
 
 use rand::{
     thread_rng
+    , distributions::{
+        Uniform
+    }
+    , Rng
 };
 
 use std::{
@@ -31,12 +35,11 @@ use lpda::{
 };
 
 use scorus::{
-    opt::{
-        powell::fmin
-        , tolerance::Tolerance
-        , pso::{
-            Particle
-            , ParticleSwarmMaximizer
+    mcmc::{
+        ensemble_sample::{
+            sample
+            , init_logprob
+            , UpdateFlagSpec
         }
     }
     , linear_space::type_wrapper::LsVec
@@ -150,12 +153,16 @@ fn main(){
     
     let diff=beam_opt_func_obj2(&averaged_target_beam, lat, &ant_beam, &ant_x, &ant_y, &ant_z, &ant_w, &ant_phase, freq);
     println!("{}", diff);
-
+    let beta=1e6;
     let fobj=|half_w: &LsVec<f64, Vec<f64>>|{
-        let weights=sym_weight(&half_w.0);
-        let r=beam_opt_func_obj2(&averaged_target_beam, lat, &ant_beam, &ant_x, &ant_y, &ant_z, &weights, &ant_phase, freq);
-        //println!("{:?} {:e}", weights, r);
-        -r
+        let weights:Vec<_>=sym_weight(&half_w.0);
+        -beta*if weights.iter().any(|&x| x< 0.0 || x>10.0 ){
+            f64::INFINITY
+        }else{
+            let r=beam_opt_func_obj2(&averaged_target_beam, lat, &ant_beam, &ant_x, &ant_y, &ant_z, &weights, &ant_phase, freq);
+            //println!("{:?} {:e}", weights, r);
+            r
+        }
     };
 
     /*
@@ -172,19 +179,45 @@ fn main(){
 
     println!("init diff={:e}", fobj(&guess));
     
-    let mut pso_solver=ParticleSwarmMaximizer::new(&fobj, &LsVec(vec![0.0; (nants-1)/2]),&LsVec(vec![1.0; (nants-1)/2]) , Some(guess), 32, &mut rng);
-    let mut opt_weights=init_weights.clone();
-    while !pso_solver.converged(0.7, 1e-8, 1e-8) {
-        if let Some(ref gbest) = pso_solver.gbest {
-            eprintln!("{:?} {:e}", gbest.position, gbest.fitness);
-            opt_weights=gbest.position.0.clone();
-        } else {
-            eprint!(".")
+    let nwalkers=128;
+
+    let mut ensemble:Vec<_>=(0..nwalkers).map(|i|{
+        LsVec(if i==0{
+            guess.0.clone()
+        }else{
+            (0..guess.0.len()).map(|j|{
+                rng.sample(Uniform::<f64>::new(0.0, 1.0))
+            }).collect()
+        })
+    }).collect();
+
+    let mut logprob=vec![0.0; nwalkers];
+    init_logprob(&fobj, &ensemble, &mut logprob);
+
+    let mut ufs=UpdateFlagSpec::All;
+    
+
+    let niter=3000;
+    let mut opt_weights=guess.0.clone();
+    let mut opt_lp=logprob[0];
+    for _i in 0..niter{
+        sample(&fobj, &mut ensemble, &mut logprob, &mut rng, 2.0, &mut ufs);
+        let optvalue=ensemble.iter().zip(logprob.iter()).reduce(|(e1,lp1),(e2,lp2)|{
+            if lp1<lp2{
+                (e2,lp2)
+            }else{
+                (e1,lp1)
+            }
+        }).unwrap();
+        
+        if *optvalue.1 > opt_lp{
+            opt_lp=*optvalue.1;
+            opt_weights=optvalue.0.0.clone();
+            println!("{:?} {}", opt_weights, opt_lp/beta);
         }
-        pso_solver.sample(&mut rng, 0.75, 0.5, 1.);
     }
 
-
+    
     let ant_w=sym_weight(&opt_weights);
     let array_cfg_opt=ArrayCfg{
         ants:ant_x.iter().zip(ant_y.iter().zip(ant_z.iter().zip(ant_w.iter()))).map(|(&x, (&y, (&z, &w)))|{

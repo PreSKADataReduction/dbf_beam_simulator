@@ -123,11 +123,13 @@ pub fn averaged_beam_to_healpix(beam: &[f64])->Vec<f64>{
 pub fn beam_opt_func_obj1(beam1: &[f64], beam2: &[f64], wgt: &[f64])->f64{
     assert_eq!(beam1.len(), wgt.len());
     assert_eq!(beam2.len(), wgt.len());
+    let npix=beam1.len();
+    let domega=4.0*PI/npix as f64;
     let s1=beam1.iter().zip(wgt.iter()).map(|(&a,&b)|{a*b}).sum::<f64>();
     let s2=beam2.iter().zip(wgt.iter()).map(|(&a,&b)|{a*b}).sum::<f64>();
     beam1.iter().zip(beam2.iter().zip(wgt.iter())).map(|(&b1, (&b2, &w))|{
         (b1/s1-b2/s2)*w
-    }).map(|x|x.powi(2)).sum::<f64>()
+    }).map(|x|x.powi(2)).sum::<f64>()/domega
 }
 
 pub fn beam_opt_func_obj2(beam0: &[f64], 
@@ -137,6 +139,22 @@ pub fn beam_opt_func_obj2(beam0: &[f64],
     let (mean_beam, weight, _theta)=calc_averaged_array_beam(lat_deg, ant_beam, x_list, y_list, z_list, w_list, phi_list, freq_hz);
     let weight:Vec<_>=weight.into_iter().map(|x| x as f64).collect();
     beam_opt_func_obj1(&beam0, &mean_beam, &weight)
+}
+
+pub fn calc_averaged_ant_output(beam: &[f64], sky: &[f64])->f64{
+    let beam_hp=averaged_beam_to_healpix(beam);
+    assert_eq!(beam_hp.len(), sky.len());
+    let norm=beam_hp.iter().sum::<f64>();
+    beam_hp.iter().zip(sky.iter()).map(|(&b,&s)|{
+        b*s
+    }).sum::<f64>()/norm
+}
+
+pub fn calc_averaged_ant_output2(sky: &[f64], lat_deg: f64, ant_beam: &[f64],
+    x_list: &[f64], y_list: &[f64], z_list: &[f64], w_list: &[f64], phi_list:&[f64], freq_hz: f64)->f64
+{
+    let (mean_beam, _weight, _theta)=calc_averaged_array_beam(lat_deg, ant_beam, x_list, y_list, z_list, w_list, phi_list, freq_hz);
+    calc_averaged_ant_output(&mean_beam, &sky)
 }
 
 pub fn zenith_ns_sym_array(y: &[f64], w: &[f64])->(Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>){
