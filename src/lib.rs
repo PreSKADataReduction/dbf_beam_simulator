@@ -1,4 +1,7 @@
 #![allow(non_snake_case)]
+
+pub mod fft;
+
 use std::{
     f64::{
         consts::{
@@ -16,7 +19,23 @@ use num::{
     }
 };
 
-const LIGHT_SPEED:f64=2.99792458E8;
+use fftw::{
+    types::c64
+};
+
+use ndarray::{
+    Array2
+    , ArrayView2
+    , s
+};
+
+use crate::{
+    fft::{
+        fft2, fftshift2
+    }
+};
+
+pub const LIGHT_SPEED:f64=2.99792458E8;
 
 use scorus::{
     healpix::{
@@ -29,6 +48,9 @@ use scorus::{
         , pix::{
             pix2vec_ring, pix2ring_ring
             , ring2z_ring
+        }
+        , interp::{
+            get_interpol_ring
         }
         , rotation::rotate_ring
     }
@@ -52,6 +74,24 @@ pub struct AntCfg{
     , pub weight: f64
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SquareArrayCfg{
+    pub d: f64
+    , pub weights: Vec<(isize, isize, f64)>
+}
+
+impl SquareArrayCfg{
+    pub fn with_new_weights(&self, weights:&[f64])->Self{
+        let weights=self.weights.iter().cloned().zip(weights.iter()).map(|((m,n,_), &w)|{
+            (m,n,w)
+        }).collect();
+        SquareArrayCfg{
+            d: self.d, 
+            weights
+        }
+    }
+}
+
 pub fn calc_array_beam(nside: usize, x_list: &[f64], y_list: &[f64], z_list: &[f64], w_list: &[f64], phi_list:&[f64], freq_Hz: f64, ground_cut: bool)->Vec<f64>{
     let npix=nside2npix(nside);
     let lambda=LIGHT_SPEED/(freq_Hz);
@@ -67,6 +107,34 @@ pub fn calc_array_beam(nside: usize, x_list: &[f64], y_list: &[f64], z_list: &[f
         }else{
             0.0
         }
+    }).collect()
+}
+
+pub fn square_array_beam(nside: usize, SquareArrayCfg{d, weights}: &SquareArrayCfg, freq_Hz: f64, ground_cut:bool)->Vec<f64>{
+    let npix=nside2npix(nside);
+    let lambda=LIGHT_SPEED/freq_Hz;
+    let u=2.0*PI*d/lambda;
+    (0..npix).map(|i|{
+        if i<npix/2 || !ground_cut{
+        let pointing=pix2vec_ring::<f64>(nside, i);
+        let nx=pointing[0];
+        let ny=pointing[1];
+        weights.iter().cloned().map(|(m, n, w)|{
+            w*(if m==0{
+                1.0
+            }else{
+                2.0
+            })*(if n==0{
+                1.0
+            }else{
+                2.0
+            })*
+            (m as f64*u*nx).cos()*
+            (n as f64*u*ny).cos()
+        }).sum::<f64>().powi(2)
+    }else{
+        0.0
+    }
     }).collect()
 }
 
@@ -187,3 +255,138 @@ pub fn sym_weight(w: &[f64])->Vec<f64>{
     ant_w
 }
 
+pub fn design_square_array(spacing: f64, freq_mega_hz: f64, sigma_deg: f64, n: isize)->Array2<f64>{
+    let center=n/2;
+    let lbd=LIGHT_SPEED/(freq_mega_hz*1e6);
+    let sigma=spacing/lbd*sigma_deg.to_radians().sin();
+    let mut beam_pattern=Array2::<c64>::zeros((n as usize,n as usize));
+    for i in 0..n{
+        let x=i-center;
+        let fx=x as f64/n as f64;
+        let bx=f64::exp(-fx.powi(2)/(4.0*sigma.powi(2))); //4 for sqrt(B)
+        for j in 0..n{
+            let y=j-center;
+            let fy=y as f64/n as f64;
+            let by=f64::exp(-fy.powi(2)/(4.0*sigma.powi(2))); //4 for sqrt(B)
+            beam_pattern[(i as usize,j as usize)]=c64::from(bx*by);
+        }
+    }    
+    let mut beam_pattern=fftshift2(beam_pattern.view());
+    let mut wgt=Array2::<c64>::zeros((n as usize,n as usize));
+    fft2(beam_pattern.view_mut(), wgt.view_mut());
+    let norm=wgt[(0,0)].re;
+    let mut wgt=wgt.map(|x| x.re);
+    wgt.iter_mut().for_each(|x| *x=*x/norm);
+    println!("{}", wgt[(1,1)]);
+    println!("{}", wgt[(0,0)]);
+    fftshift2(wgt.view())
+}
+
+pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize)->Array2<f64>{
+    let npix=hp.len();
+    let nside=npix2nside(npix);
+    let center=n/2;
+    let lbd=LIGHT_SPEED/(freq_mhz*1e6);
+    let u=d/lbd;
+    let mut projected=Array2::<c64>::zeros((n as usize,n as usize));
+    
+    for i in 0..n{
+        let fx=(i as f64-center as f64)/n as f64;
+        let nx=fx/u;
+        for j in 0..n{
+            let fy=(j as f64-center as f64)/n as f64;
+            let ny=fy/u;
+            let r2=nx.powi(2)+ny.powi(2);
+            if r2>1.0{
+                continue;
+            }
+            let nz=(1.0-r2).sqrt();
+
+            let (p,w)=get_interpol_ring(nside, SphCoord::from_xyz(nx, ny, nz));
+            projected[(i as usize, j as usize)]=p.iter().zip(w.iter()).map(|(&i1,&w1)|{
+                w1*hp[i1]
+            }).sum::<f64>().sqrt().into();
+        }
+    }
+    let mut projected=fftshift2(projected.view());
+    let mut wgt=Array2::<c64>::zeros((n as usize,n as usize));    
+    fft2(projected.view_mut(), wgt.view_mut());
+    let norm=wgt[(0,0)].re;
+    let mut wgt=wgt.map(|x| x.re);
+    wgt.iter_mut().for_each(|x| *x=*x/norm);
+    fftshift2(wgt.view())        
+}
+
+pub fn wgt2pattern(wgt: ArrayView2<f64>, d: f64, freq_mhz: f64, nside: usize)->Vec<f64>{
+    let npix=nside2npix(nside);
+    let lbd=LIGHT_SPEED/(freq_mhz*1e6);
+    let u=d/lbd;
+    (0..npix).map(|ipix| {
+        if ipix<npix/2{
+            let Vec3d{x:nx,y:ny, z:_}=pix2vec_ring::<f64>(nside, ipix);
+            let mut p=c64::new(0.0, 0.0);
+            for i in 0..wgt.shape()[0]{
+                let m=(i as isize-wgt.shape()[0] as isize/2) as f64;
+                for j in 0..wgt.shape()[1]{
+                    let w=wgt[(i,j)];
+                    let n=(j as isize-wgt.shape()[1] as isize/2) as f64;
+                    p+=c64::from_polar(w, 2.0*PI*(m*u*nx+n*u*ny));
+                }
+            }
+            p.norm_sqr()
+        }else{
+            0.0
+        }
+    }).collect()
+}
+
+pub fn quarter_wgt2pattern(quarter_wgt: ArrayView2<f64>, d: f64, freq_mhz: f64, nside: usize)->Vec<f64>{
+    let npix=nside2npix(nside);
+    let lbd=LIGHT_SPEED/(freq_mhz*1e6);
+    let u=d/lbd;
+    (0..npix).map(|ipix| {
+        if ipix<npix/2{
+            let Vec3d{x:nx,y:ny, z:_}=pix2vec_ring::<f64>(nside, ipix);
+            let mut p=0.0;
+            for i in 0..quarter_wgt.shape()[0]{
+                for j in 0..quarter_wgt.shape()[1]{
+                    let w=quarter_wgt[(i,j)];
+                    p+=w*(2.0*PI*i as f64*u*nx).cos()*(2.0*PI*j as f64*u*ny).cos()*
+                    if i==0{
+                        1.0
+                    }else{
+                        2.0
+                    }*
+                    if j==0{
+                        1.0
+                    }else{
+                        2.0
+                    };
+                }
+            }
+            p.powi(2)
+        }else{
+            0.0
+        }
+    }).collect()
+}
+
+pub fn full2quarter<T>(full: ArrayView2<T>)->Array2<T>
+where T:Copy
+{
+    let h=full.shape()[0];
+    let w=full.shape()[1];
+    full.slice(s![h/2..h, w/2..w]).to_owned()
+}
+
+pub fn quarter2full<T>(quarter: ArrayView2<T>)->Array2<T>
+where T:Copy+Default{
+    let h=quarter.shape()[0]*2;
+    let w=quarter.shape()[1]*2;
+    let mut full=Array2::<T>::default((h,w));
+    full.slice_mut(s![h/2..h, w/2..w]).assign(&quarter);
+    full.slice_mut(s![1..h/2;-1, 1..w/2;-1]).assign(&quarter.slice(s![1..h/2, 1..w/2]));
+    full.slice_mut(s![h/2..h, 1..w/2;-1]).assign(&quarter.slice(s![.., 1..w/2]));
+    full.slice_mut(s![1..h/2;-1, w/2..w]).assign(&quarter.slice(s![1..h/2, ..]));
+    full
+}

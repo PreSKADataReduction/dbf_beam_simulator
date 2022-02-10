@@ -10,20 +10,23 @@ use std::{
     }
 };
 
+use serde_yaml::{
+    from_reader
+};
 
 
 use lpda::{
-    calc_array_beam
-    , calc_phase_from_pointing
-    , zenith_ns_sym_array
-    , ArrayCfg
-    , AntCfg
+    square_array_beam
+    //, calc_phase_from_pointing
+    //, zenith_ns_sym_array
+    , SquareArrayCfg
 };
 
 use scorus::{
     healpix::{
         utils::{
             npix2nside
+            , nside2npix
         }
         , rotation::rotate_ring
     }
@@ -41,14 +44,22 @@ use healpix_fits::{
 };
 
 fn main(){
-    let matches=App::new("calc_array_beam_total")
+    let matches=App::new("calc_square_array_beam")
     .arg(Arg::new("single_antenna_beam")
         .short('s')
         .long("ant")
         .takes_value(true)
         .value_name("ant healpix")
-        .required(true)
+        .required(false)
         .help("healpix")
+    )
+    .arg(Arg::new("nside")
+        .short('n')
+        .long("nside")
+        .takes_value(true)
+        .value_name("nside")
+        .required(false)
+        .help("nside")
     )
     .arg(Arg::new("array_cfg")
         .short('a')
@@ -57,25 +68,6 @@ fn main(){
         .value_name("array cfg")
         .required(false)
         .help("array cfg")
-    )
-    .arg(Arg::new("weights")
-        .short('w')
-        .long("weights")
-        .takes_value(true)
-        .value_name("weights")
-        .required(false)
-        .use_delimiter(true)
-        .value_delimiter(',')
-        .allow_hyphen_values(true)
-        .help("number of ants, must be odd")
-    )
-    .arg(Arg::new("spacing")
-        .short('d')
-        .long("spacing")
-        .takes_value(true)
-        .value_name("spacing in meter")
-        .required(false)
-        .help("antenna spacing")
     )
     .arg(
         Arg::new("freq_MHz")
@@ -104,40 +96,50 @@ fn main(){
         .required(true)
         .help("lat")
     )
+    .arg(
+        Arg::new("lon")
+        .short('m')
+        .long("lon")
+        .takes_value(true)
+        .value_name("lon in deg")
+        .required(false)
+        .help("lon")
+    )
     .get_matches();
 
-
-    let ant_beam={
-        let mut a=read_map::<f64>(matches.value_of("single_antenna_beam").unwrap(), &["TEMPERATURE"], 1);
-        a.pop().unwrap()
+    let (ant_beam, nside)=
+    if let Some(fname)=matches.value_of("single_antenna_beam"){
+        let mut a=read_map::<f64>(fname, &["TEMPERATURE"], 1);
+        let ant_beam=a.pop().unwrap();
+        let nside=npix2nside(ant_beam.len());
+        (ant_beam, nside)
+    }else{
+        let nside=matches.value_of("nside").unwrap().parse::<usize>().unwrap();
+        let npix=nside2npix(nside);
+        let ant_beam=(0..npix).map(|_| 1.0).collect();
+        (ant_beam, nside)
     };
     
     let lat=matches.value_of("lat").unwrap().parse::<f64>().unwrap();
-    let nside=npix2nside(ant_beam.len());
+    let lon=if let Some(lon)=matches.value_of("lon"){
+        lon.parse::<f64>().unwrap()
+    }else{
+        0.0
+    };
     let out_file_name=matches.value_of("outfile").unwrap();
     let freq=matches.value_of("freq_MHz").unwrap().parse::<f64>().unwrap()*1e6;
 
-
-    let (ant_x, ant_y, ant_z, ant_w)=if let Some(fname)=matches.value_of("array_cfg"){
-        let mut cfgfile=File::open(fname).unwrap();
-        let array_cfg:ArrayCfg=serde_yaml::from_reader(&mut cfgfile).unwrap();
-        let (ant_x, (ant_y, (ant_z, ant_w))):(Vec<f64>, (Vec<f64>, (Vec<f64>, Vec<f64>)))=array_cfg.ants.iter().map(|AntCfg { pos, weight }|{(pos.0,( pos.1,( pos.2, *weight)))}).unzip();
-        (ant_x, ant_y, ant_z, ant_w)
-    }else{
-        let init_weights:Vec<_>=matches.values_of("weights").unwrap().map(|x| x.trim().parse::<f64>().unwrap()).collect();
-        let nants=init_weights.len()*2+1;
-        let spacing=matches.value_of("spacing").unwrap().parse::<f64>().unwrap();
-        let y_list:Vec<_>=(1..=(nants-1)/2).map(|i| i as f64*spacing).collect();
-        zenith_ns_sym_array(&y_list, &init_weights)
-    };
+    let mut cfg_file=File::open(matches.value_of("array_cfg").unwrap()).unwrap();
+    let array_cfg:SquareArrayCfg=   from_reader(&mut cfg_file).unwrap();
     
 
-    let ant_phase=calc_phase_from_pointing(&ant_x, &ant_y, &ant_z, 0_f64.to_radians(), 0_f64.to_radians(), freq);
-    let array_beam=calc_array_beam(nside, &ant_x, &ant_y, &ant_z, &ant_w,&ant_phase, freq, true);
+    let array_beam=square_array_beam(nside, &array_cfg, freq, true);
     let total_beam:Vec<_>=array_beam.iter().zip(ant_beam.iter()).map(|(&a, &b)|{a*b}).collect();
 
 
-    let rot=RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 1.0, 0.0), (90.0-lat).to_radians())
+    let rot=
+    RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), lon.to_radians())
+    *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 1.0, 0.0), (90.0-lat).to_radians())
     *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), -90_f64.to_radians())
     ;
 
