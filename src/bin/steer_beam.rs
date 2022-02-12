@@ -4,31 +4,10 @@ use clap::{
     , Arg
 };
 
-use std::{
-    fs::{
-        File
-    }
-};
-
-use serde_yaml::{
-    from_reader
-};
-
-
-use lpda::{
-    square_array_beam
-    //, calc_phase_from_pointing
-    //, zenith_ns_sym_array
-    , SquareArrayCfg
-};
 
 use scorus::{
     healpix::{
-        utils::{
-            npix2nside
-            , nside2npix
-        }
-        , rotation::rotate_ring
+        rotation::rotate_ring
     }
     , coordinates::{
         rotation3d::{

@@ -185,7 +185,7 @@ fn main(){
         LsVec(if i==0{
             guess.0.clone()
         }else{
-            (0..guess.0.len()).map(|j|{
+            (0..guess.0.len()).map(|_j|{
                 rng.sample(Uniform::<f64>::new(0.0, 1.0))
             }).collect()
         })

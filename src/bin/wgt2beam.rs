@@ -12,8 +12,7 @@ use ndarray::{
 };
 
 use fitsimg::{
-    write_img
-    , read_img
+    read_img
 };
 
 
@@ -38,9 +37,7 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    pattern2wgt
-    , wgt2pattern
-    , quarter_wgt2pattern
+    quarter_wgt2pattern
 };
 
 
