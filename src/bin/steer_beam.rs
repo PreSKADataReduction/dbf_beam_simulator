@@ -2,6 +2,7 @@ extern crate dbf_beam_simulator as lpda;
 use clap::{
     App
     , Arg
+    , ArgGroup
 };
 
 
@@ -68,6 +69,11 @@ fn main(){
         .required(false)
         .allow_hyphen_values(true)
         .help("lon")
+    )
+    .group(
+        ArgGroup::new("inputs")
+        .args(&["beam", "sky"])
+        .required(true)
     )
     .get_matches();
 
