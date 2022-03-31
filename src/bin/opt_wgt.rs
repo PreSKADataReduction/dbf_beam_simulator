@@ -3,6 +3,7 @@ extern crate dbf_beam_simulator;
 use clap::{
     Command
     ,Arg
+    , ArgGroup
 };
 
 use rand::{
@@ -110,6 +111,15 @@ fn main(){
         .help("sky")
     )
     .arg(
+        Arg::new("npart")
+        .short('p')
+        .long("npart")
+        .takes_value(true)
+        .value_name("num of particles")
+        .required(false)
+        .help("num of particles")
+    )
+    .arg(
         Arg::new("out_wgt")
         .short('o')
         .long("out")
@@ -117,6 +127,11 @@ fn main(){
         .value_name("out_wgt")
         .required(true)
         .help("out_wgt")
+    )
+    .group(
+        ArgGroup::new("ant_beam_or_nside")
+        .args(&["ant_beam", "nside"])
+        .required(true)
     )
     .get_matches();
 
@@ -171,7 +186,11 @@ fn main(){
     };
 
     let guess=LsVec::<f64, Vec<_>>(wgt_eff.iter().skip(1).cloned().collect());
-    let npart=64;
+    let npart=if let Some(np)=matches.value_of("npart"){
+        np.parse().unwrap()
+    }else{
+        64
+    };
     let mut rng=thread_rng();
 
     eprintln!("init diff::{}", fobj(&guess));

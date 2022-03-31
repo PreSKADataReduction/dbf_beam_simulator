@@ -3,6 +3,7 @@ extern crate dbf_beam_simulator;
 use clap::{
     Command
     ,Arg
+    , ArgGroup
 };
 
 
@@ -54,15 +55,6 @@ fn main(){
         .help("ant beam")
     )
     .arg(
-        Arg::new("wgt")
-        .short('w')
-        .long("wgt")
-        .takes_value(true)
-        .value_name("wgt file")
-        .required(true)
-        .help("wgt")
-    )
-    .arg(
         Arg::new("nside")
         .short('n')
         .long("nside")
@@ -70,6 +62,15 @@ fn main(){
         .value_name("nside")
         .required(false)
         .help("nside")
+    )
+    .arg(
+        Arg::new("wgt")
+        .short('w')
+        .long("wgt")
+        .takes_value(true)
+        .value_name("wgt file")
+        .required(true)
+        .help("wgt")
     )
     .arg(
         Arg::new("spacing")
@@ -97,6 +98,11 @@ fn main(){
         .value_name("output beam")
         .required(true)
         .help("output beam file")
+    )
+    .group(
+        ArgGroup::new("inputs")
+        .args(&["nside", "ant_beam"])
+        .required(true)
     )
     .get_matches();
 

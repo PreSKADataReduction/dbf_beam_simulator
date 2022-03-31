@@ -2,6 +2,7 @@ extern crate dbf_beam_simulator as lpda;
 use clap::{
     Command
     , Arg
+    , ArgGroup
 };
 
 
@@ -69,6 +70,11 @@ fn main(){
         .allow_hyphen_values(true)
         .help("lon")
     )
+    .group(
+        ArgGroup::new("inputs")
+        .args(&["beam", "sky"])
+        .required(true)
+    )
     .get_matches();
 
     let lat=matches.value_of("lat").unwrap().parse::<f64>().unwrap();
@@ -84,15 +90,14 @@ fn main(){
     if let Some(fname)=matches.value_of("beam"){
         let data=read_map::<f64>(fname, &["TEMPERATURE"], 1).pop().unwrap();
         let rot=
-        RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), lon.to_radians())
-        *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 1.0, 0.0), (90.0-lat).to_radians())
-        *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), -90_f64.to_radians());
+        RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), (90.0+lon).to_radians())
+        *RotMatrix::about_axis_by_angle(&Vec3d::new(1.0, 0.0, 0.0), (90.0-lat).to_radians());
         (data, rot)
     }else if let Some(fname)=matches.value_of("sky"){
         let data=read_map::<f64>(fname, &["TEMPERATURE"], 1).pop().unwrap();
         let rot=
-        RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 1.0, 0.0), -(90.0-lat).to_radians())
-        *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), lon.to_radians());
+        RotMatrix::about_axis_by_angle(&Vec3d::new(1.0, 0.0, 0.0), -(90.0-lat).to_radians())
+        *RotMatrix::about_axis_by_angle(&Vec3d::new(0.0, 0.0, 1.0), -(90.0+lon).to_radians());
         (data,rot)
     }else{
         panic!()
