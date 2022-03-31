@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 extern crate dbf_beam_simulator as lpda;
 use clap::{
-    App
+    Command
     , Arg
 };
 
@@ -50,7 +50,7 @@ use healpix_fits::{
 };
 
 fn main(){
-    let matches=App::new("calc_array_beam_total")
+    let matches=Command::new("calc_array_beam_total")
     .arg(Arg::new("single_antenna_beam")
         .short('s')
         .long("ant")
@@ -65,7 +65,7 @@ fn main(){
         .takes_value(true)
         .value_name("weights")
         .required(true)
-        .use_delimiter(true)
+        .use_value_delimiter(true)
         .value_delimiter(',')
         .allow_hyphen_values(true)
         .help("number of ants, must be odd")
@@ -185,7 +185,7 @@ fn main(){
         LsVec(if i==0{
             guess.0.clone()
         }else{
-            (0..guess.0.len()).map(|j|{
+            (0..guess.0.len()).map(|_j|{
                 rng.sample(Uniform::<f64>::new(0.0, 1.0))
             }).collect()
         })

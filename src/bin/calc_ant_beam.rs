@@ -5,7 +5,7 @@ use std::fs::{
 use pest::Parser;
 
 use clap::{
-    App
+    Command
     , Arg
 };
 
@@ -38,7 +38,7 @@ use necrs::nec_parser::{
 };
 
 pub fn main(){
-    let matches=App::new("calc_ant_beam")
+    let matches=Command::new("calc_ant_beam")
     .arg(Arg::new("nec")
         .short('n')
         .long("nec")

@@ -1,7 +1,7 @@
 extern crate dbf_beam_simulator;
 
 use clap::{
-    App
+    Command
     ,Arg
 };
 
@@ -22,7 +22,7 @@ use healpix_fits::{
 };
 
 fn main(){
-    let matches=App::new("gaussian beam")
+    let matches=Command::new("gaussian beam")
     .arg(
         Arg::new("nside")
         .short('n')

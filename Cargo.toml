@@ -1,18 +1,17 @@
 [dependencies]
-clap = '3.0.6'
+clap = '3.1.6'
+fftw = '0.7.0'
+kiss3d = '0.34.0'
+nalgebra = '0.30.1'
+ndarray = '0.15.4'
 num = '0.4.0'
 pest = '2.1.3'
 pest_derive = '2.1.0'
-serde_yaml = '0.8.21'
-kiss3d = '0.32.0'
-nalgebra = '0.30.1'
-rand='0.8.4'
-fftw = '0.7.0'
-ndarray = '0.15.4'
+rand = '0.8.5'
+serde_yaml = '0.8.23'
 
-[dependencies.serde]
-features = ['derive']
-version = '1.0.130'
+[dependencies.fitsimg]
+path = '../rust_fitsimg'
 
 [dependencies.healpix_fits]
 path = '../healpix_fits'
@@ -23,8 +22,9 @@ path = '../necrs'
 [dependencies.scorus]
 path = '../scorus'
 
-[dependencies.fitsimg]
-path = '../rust_fitsimg'
+[dependencies.serde]
+features = ['derive']
+version = '1.0.136'
 
 [package]
 edition = '2021'

@@ -1,7 +1,7 @@
 extern crate dbf_beam_simulator;
 
 use clap::{
-    App
+    Command
     ,Arg
 };
 
@@ -45,7 +45,7 @@ use dbf_beam_simulator::{
 
 
 fn main(){
-    let matches=App::new("wgt2beam")
+    let matches=Command::new("wgt2beam")
     .arg(
         Arg::new("ant_beam")
         .short('a')

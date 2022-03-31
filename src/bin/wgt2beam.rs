@@ -1,7 +1,7 @@
 extern crate dbf_beam_simulator;
 
 use clap::{
-    App
+    Command
     ,Arg
 };
 
@@ -12,8 +12,7 @@ use ndarray::{
 };
 
 use fitsimg::{
-    write_img
-    , read_img
+    read_img
 };
 
 
@@ -38,15 +37,13 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    pattern2wgt
-    , wgt2pattern
-    , quarter_wgt2pattern
+    quarter_wgt2pattern
 };
 
 
 
 fn main(){
-    let matches=App::new("wgt2beam")
+    let matches=Command::new("wgt2beam")
     .arg(
         Arg::new("ant_beam")
         .short('a')

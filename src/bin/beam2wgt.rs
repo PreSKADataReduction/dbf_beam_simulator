@@ -1,7 +1,7 @@
 extern crate dbf_beam_simulator;
 
 use clap::{
-    App
+    Command
     ,Arg
 };
 
@@ -38,7 +38,7 @@ use dbf_beam_simulator::{
 
 
 fn main(){
-    let matches=App::new("gaussian beam")
+    let matches=Command::new("gaussian beam")
     .arg(
         Arg::new("ant_beam")
         .short('a')

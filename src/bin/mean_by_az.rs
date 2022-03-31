@@ -1,6 +1,6 @@
 extern crate dbf_beam_simulator;
 use clap::{
-    App, Arg
+    Command, Arg
 };
 
 use healpix_fits::{
@@ -12,7 +12,7 @@ use dbf_beam_simulator::{
 };
 
 fn main(){
-    let matches=App::new("mean_by_az")
+    let matches=Command::new("mean_by_az")
     .arg(
         Arg::new("input_healpix")
         .short('i')

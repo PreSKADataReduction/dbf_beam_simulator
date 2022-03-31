@@ -1,6 +1,6 @@
 extern crate dbf_beam_simulator as lpda;
 use clap::{
-    App
+    Command
     , Arg
 };
 
@@ -44,7 +44,7 @@ use healpix_fits::{
 };
 
 fn main(){
-    let matches=App::new("calc_square_array_beam")
+    let matches=Command::new("calc_square_array_beam")
     .arg(Arg::new("single_antenna_beam")
         .short('s')
         .long("ant")

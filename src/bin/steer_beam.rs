@@ -1,34 +1,13 @@
 extern crate dbf_beam_simulator as lpda;
 use clap::{
-    App
+    Command
     , Arg
 };
 
-use std::{
-    fs::{
-        File
-    }
-};
-
-use serde_yaml::{
-    from_reader
-};
-
-
-use lpda::{
-    square_array_beam
-    //, calc_phase_from_pointing
-    //, zenith_ns_sym_array
-    , SquareArrayCfg
-};
 
 use scorus::{
     healpix::{
-        utils::{
-            npix2nside
-            , nside2npix
-        }
-        , rotation::rotate_ring
+        rotation::rotate_ring
     }
     , coordinates::{
         rotation3d::{
@@ -44,7 +23,7 @@ use healpix_fits::{
 };
 
 fn main(){
-    let matches=App::new("steer_beam")
+    let matches=Command::new("steer_beam")
     .arg(Arg::new("beam")
         .short('b')
         .long("beam")

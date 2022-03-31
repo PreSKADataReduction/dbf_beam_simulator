@@ -1,14 +1,10 @@
 extern crate dbf_beam_simulator;
 
 use ndarray::{
-    array
-    , Array2
-    , s
+    s
 };
 
 use fitsimg::write_img;
-
-use fftw::types::c64;
 
 use scorus::{
     healpix::{
@@ -26,13 +22,7 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    fft::{
-        fft2
-        , fftshift2
-    }
-    , LIGHT_SPEED
-    , design_square_array
-    , pattern2wgt
+    pattern2wgt
     , wgt2pattern
     , quarter_wgt2pattern
 };
