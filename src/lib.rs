@@ -10,7 +10,6 @@ use std::{
     }
 };
 
-use serde::{Serialize, Deserialize};
 
 use num::{
     complex::{
@@ -60,34 +59,6 @@ use scorus::{
     }
 };
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct ArrayCfg{
-    pub ants: Vec<AntCfg>
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct AntCfg{
-    pub pos: (f64,f64,f64)
-    , pub weight: f64
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct SquareArrayCfg{
-    pub d: f64
-    , pub weights: Vec<(isize, isize, f64)>
-}
-
-impl SquareArrayCfg{
-    pub fn with_new_weights(&self, weights:&[f64])->Self{
-        let weights=self.weights.iter().cloned().zip(weights.iter()).map(|((m,n,_), &w)|{
-            (m,n,w)
-        }).collect();
-        SquareArrayCfg{
-            d: self.d, 
-            weights
-        }
-    }
-}
 
 pub fn calc_array_beam(nside: usize, x_list: &[f64], y_list: &[f64], z_list: &[f64], w_list: &[f64], phi_list:&[f64], freq_Hz: f64, ground_cut: bool)->Vec<f64>{
     let npix=nside2npix(nside);
@@ -104,34 +75,6 @@ pub fn calc_array_beam(nside: usize, x_list: &[f64], y_list: &[f64], z_list: &[f
         }else{
             0.0
         }
-    }).collect()
-}
-
-pub fn square_array_beam(nside: usize, SquareArrayCfg{d, weights}: &SquareArrayCfg, freq_Hz: f64, ground_cut:bool)->Vec<f64>{
-    let npix=nside2npix(nside);
-    let lambda=LIGHT_SPEED/freq_Hz;
-    let u=2.0*PI*d/lambda;
-    (0..npix).map(|i|{
-        if i<npix/2 || !ground_cut{
-        let pointing=pix2vec_ring::<f64>(nside, i);
-        let nx=pointing[0];
-        let ny=pointing[1];
-        weights.iter().cloned().map(|(m, n, w)|{
-            w*(if m==0{
-                1.0
-            }else{
-                2.0
-            })*(if n==0{
-                1.0
-            }else{
-                2.0
-            })*
-            (m as f64*u*nx).cos()*
-            (n as f64*u*ny).cos()
-        }).sum::<f64>().powi(2)
-    }else{
-        0.0
-    }
     }).collect()
 }
 
