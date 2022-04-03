@@ -18,10 +18,6 @@ use num::{
     }
 };
 
-use fftw::{
-    types::c64
-};
-
 use ndarray::{
     Array1
     , Array2
@@ -31,8 +27,8 @@ use ndarray::{
 
 use crate::{
     fft::{
-        fft2, fftshift2
-        , fft2_rust
+        fftshift2
+        , fft2
     }
 };
 
@@ -274,7 +270,7 @@ pub fn design_square_array(spacing: f64, freq_mega_hz: f64, sigma_deg: f64, n: i
     }    
     let mut beam_pattern=fftshift2(beam_pattern.view());
     let mut wgt=Array2::<Complex<f64>>::zeros((n as usize,n as usize));
-    fft2_rust(beam_pattern.view_mut(), wgt.view_mut());
+    fft2(beam_pattern.view_mut(), wgt.view_mut());
     let norm=wgt[(0,0)].re;
     let mut wgt=wgt.map(|x| x.re);
     wgt.iter_mut().for_each(|x| *x=*x/norm);
@@ -311,7 +307,7 @@ pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize)->Array2<f64>{
     }
     let mut projected=fftshift2(projected.view());
     let mut wgt=Array2::<Complex<f64>>::zeros((n as usize,n as usize));    
-    fft2_rust(projected.view_mut(), wgt.view_mut());
+    fft2(projected.view_mut(), wgt.view_mut());
     let norm=wgt[(0,0)].re;
     let mut wgt=wgt.map(|x| x.re);
     wgt.iter_mut().for_each(|x| *x=*x/norm);

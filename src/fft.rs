@@ -3,17 +3,6 @@ use num::{
     , Complex
 };
 
-use fftw::{
-    plan::{
-        C2CPlan64
-        , C2CPlan
-    }
-    , types::{
-        Flag, Sign
-        , c64
-    }
-};
-
 use rustfft::{
     FftNum
     , FftPlanner
@@ -30,20 +19,6 @@ use ndarray::{
     , ArrayViewMut
 };
 
-
-pub fn fft2(mut in_data: ArrayViewMut2<c64>, 
-    mut out_data: ArrayViewMut2<c64>){
-    let mut plan=C2CPlan64::new(&[in_data.nrows(),in_data.ncols()], in_data.as_slice_mut().unwrap(), out_data.as_slice_mut().unwrap(), 
-    Sign::Forward, Flag::ESTIMATE).unwrap();
-    plan.c2c(&mut in_data.as_slice_mut().unwrap(), &mut out_data.as_slice_mut().unwrap()).unwrap();
-}
-
-pub fn ifft2(mut in_data: ArrayViewMut2<c64>, 
-    mut out_data: ArrayViewMut2<c64>){
-    let mut plan=C2CPlan64::new(&[in_data.nrows(),in_data.ncols()], in_data.as_slice_mut().unwrap(), out_data.as_slice_mut().unwrap(), 
-    Sign::Backward, Flag::ESTIMATE).unwrap();
-    plan.c2c(&mut in_data.as_slice_mut().unwrap(), &mut out_data.as_slice_mut().unwrap()).unwrap();    
-}
 
 pub fn fftshift2<T>(in_data: ArrayView2<T>) -> Array2<T>
 where
@@ -85,11 +60,11 @@ pub fn ifft<T: FftNum>(input: &mut [Complex<T>], output: &mut [Complex<T>]) {
     }*/
 }
 
-pub fn fft2_rust(input: ArrayViewMut2<Complex<f64>>, output: ArrayViewMut2<Complex<f64>>) {
+pub fn fft2(input: ArrayViewMut2<Complex<f64>>, output: ArrayViewMut2<Complex<f64>>) {
     fftnd(input, output, &[0,1]);
 }
 
-pub fn ifft2_rust(input: ArrayViewMut2<Complex<f64>>, output: ArrayViewMut2<Complex<f64>>) {
+pub fn ifft2(input: ArrayViewMut2<Complex<f64>>, output: ArrayViewMut2<Complex<f64>>) {
     ifftnd(input, output, &[1,0]);
 }
 
