@@ -32,6 +32,7 @@ use ndarray::{
 use crate::{
     fft::{
         fft2, fftshift2
+        , fft2_rust
     }
 };
 
@@ -259,7 +260,7 @@ pub fn design_square_array(spacing: f64, freq_mega_hz: f64, sigma_deg: f64, n: i
     let center=n/2;
     let lbd=LIGHT_SPEED/(freq_mega_hz*1e6);
     let sigma=spacing/lbd*sigma_deg.to_radians().sin();
-    let mut beam_pattern=Array2::<c64>::zeros((n as usize,n as usize));
+    let mut beam_pattern=Array2::<Complex<f64>>::zeros((n as usize,n as usize));
     for i in 0..n{
         let x=i-center;
         let fx=x as f64/n as f64;
@@ -268,12 +269,12 @@ pub fn design_square_array(spacing: f64, freq_mega_hz: f64, sigma_deg: f64, n: i
             let y=j-center;
             let fy=y as f64/n as f64;
             let by=f64::exp(-fy.powi(2)/(4.0*sigma.powi(2))); //4 for sqrt(B)
-            beam_pattern[(i as usize,j as usize)]=c64::from(bx*by);
+            beam_pattern[(i as usize,j as usize)]=Complex::<f64>::from(bx*by);
         }
     }    
     let mut beam_pattern=fftshift2(beam_pattern.view());
-    let mut wgt=Array2::<c64>::zeros((n as usize,n as usize));
-    fft2(beam_pattern.view_mut(), wgt.view_mut());
+    let mut wgt=Array2::<Complex<f64>>::zeros((n as usize,n as usize));
+    fft2_rust(beam_pattern.view_mut(), wgt.view_mut());
     let norm=wgt[(0,0)].re;
     let mut wgt=wgt.map(|x| x.re);
     wgt.iter_mut().for_each(|x| *x=*x/norm);
@@ -288,7 +289,7 @@ pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize)->Array2<f64>{
     let center=n/2;
     let lbd=LIGHT_SPEED/(freq_mhz*1e6);
     let u=d/lbd;
-    let mut projected=Array2::<c64>::zeros((n as usize,n as usize));
+    let mut projected=Array2::<Complex<f64>>::zeros((n as usize,n as usize));
     
     for i in 0..n{
         let fx=(i as f64-center as f64)/n as f64;
@@ -309,8 +310,8 @@ pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize)->Array2<f64>{
         }
     }
     let mut projected=fftshift2(projected.view());
-    let mut wgt=Array2::<c64>::zeros((n as usize,n as usize));    
-    fft2(projected.view_mut(), wgt.view_mut());
+    let mut wgt=Array2::<Complex<f64>>::zeros((n as usize,n as usize));    
+    fft2_rust(projected.view_mut(), wgt.view_mut());
     let norm=wgt[(0,0)].re;
     let mut wgt=wgt.map(|x| x.re);
     wgt.iter_mut().for_each(|x| *x=*x/norm);
@@ -324,13 +325,13 @@ pub fn wgt2pattern(wgt: ArrayView2<f64>, d: f64, freq_mhz: f64, nside: usize)->V
     (0..npix).map(|ipix| {
         if ipix<npix/2{
             let Vec3d{x:nx,y:ny, z:_}=pix2vec_ring::<f64>(nside, ipix);
-            let mut p=c64::new(0.0, 0.0);
+            let mut p=Complex::<f64>::new(0.0, 0.0);
             for i in 0..wgt.shape()[0]{
                 let m=(i as isize-wgt.shape()[0] as isize/2) as f64;
                 for j in 0..wgt.shape()[1]{
                     let w=wgt[(i,j)];
                     let n=(j as isize-wgt.shape()[1] as isize/2) as f64;
-                    p+=c64::from_polar(w, 2.0*PI*(m*u*nx+n*u*ny));
+                    p+=Complex::<f64>::from_polar(w, 2.0*PI*(m*u*nx+n*u*ny));
                 }
             }
             p.norm_sqr()
