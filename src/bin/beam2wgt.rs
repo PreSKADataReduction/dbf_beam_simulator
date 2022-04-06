@@ -32,7 +32,7 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    pattern2wgt
+    regular_array::pattern2wgt
 };
 
 

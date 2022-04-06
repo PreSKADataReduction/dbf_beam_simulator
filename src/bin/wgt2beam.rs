@@ -38,7 +38,7 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    quarter_wgt2pattern
+    regular_array::quarter_wgt2pattern
 };
 
 

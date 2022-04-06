@@ -9,8 +9,8 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    integrate_az
-    , averaged_beam_to_healpix
+    utils::integrate_az
+    , utils::averaged_beam_to_healpix
 };
 
 fn main(){

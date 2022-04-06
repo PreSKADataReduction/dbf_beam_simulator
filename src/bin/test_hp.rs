@@ -10,7 +10,9 @@ use scorus::{
 
 
 use dbf_beam_simulator::{
-    integrate_az
+    utils::{
+        integrate_az
+    }    
 };
 
 

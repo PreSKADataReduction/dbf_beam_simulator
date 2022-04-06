@@ -38,9 +38,11 @@ use healpix_fits::{
 };
 
 use dbf_beam_simulator::{
-    quarter_wgt2pattern
-    , full2quarter
-    , deflattern_quarter_wgt, quarter2full
+    regular_array::{
+        quarter_wgt2pattern
+        , full2quarter
+        , deflattern_quarter_wgt, quarter2full
+    }
 };
 
 
