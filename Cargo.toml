@@ -10,14 +10,6 @@ rand = '0.8.5'
 serde_yaml = '0.8.23'
 rustfft='6.0.1'
 
-[dependencies.fitsimg]
-path = '../rust_fitsimg'
-
-[dependencies.healpix_fits]
-path = '../healpix_fits'
-
-[dependencies.necrs]
-path = '../necrs'
 
 [dependencies.scorus]
 path = '../scorus'
@@ -26,7 +18,17 @@ path = '../scorus'
 features = ['derive']
 version = '1.0.136'
 
+
+[target.'cfg(not (target_family = "wasm"))'.dependencies]
+fitsimg={path = '../rust_fitsimg'}
+healpix_fits={path = '../healpix_fits'}
+necrs={path = '../necrs'}
+
+
 [package]
 edition = '2021'
 name = 'dbf_beam_simulator'
 version = '0.1.0'
+
+[lib]
+crate-type = ["cdylib", "lib"]

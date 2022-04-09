@@ -1,3 +1,4 @@
+#![cfg(not(target_family = "wasm"))]
 extern crate dbf_beam_simulator;
 
 use ndarray::s;

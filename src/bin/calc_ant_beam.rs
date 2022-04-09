@@ -1,3 +1,4 @@
+#![cfg(not(target_family = "wasm"))]
 use std::fs::read_to_string;
 
 use pest::Parser;

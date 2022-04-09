@@ -1,3 +1,4 @@
+#![cfg(not(target_family = "wasm"))]
 #![allow(unused_variables)]
 
 extern crate dbf_beam_simulator as lpda;
