@@ -5,6 +5,7 @@ pub mod constants;
 pub mod fft;
 pub mod regular_array;
 pub mod utils;
+pub mod array_cfg;
 
 //pub use regular_array::*;
 
