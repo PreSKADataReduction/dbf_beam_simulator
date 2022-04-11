@@ -1,16 +1,12 @@
-use serde::{
-    Serialize
-    , Deserialize
-};
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ArrayCfg{
-    pub ants: Vec<AntCfg>
+pub struct ArrayCfg {
+    pub ants: Vec<AntCfg>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct AntCfg{
-    pub pos: (f64,f64,f64)
-    , pub weight: f64
+pub struct AntCfg {
+    pub pos: (f64, f64, f64),
+    pub weight: f64,
 }
