@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use serde_yaml::to_writer;
 
 use std::{
@@ -22,5 +24,5 @@ pub fn main() {
     };
 
     let mut outfile=File::create("a.yaml").unwrap();
-    to_writer(&mut outfile, &array_cfg);
+    to_writer(&mut outfile, &array_cfg).unwrap();
 }

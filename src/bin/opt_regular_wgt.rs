@@ -162,11 +162,13 @@ fn main() {
         .parse::<f64>()
         .unwrap();
 
+    let odd=wgt.shape()[0]%2==1;
     let wgt_eff = full2quarter(wgt.view());
+    println!("{:?}",wgt_eff.shape());
 
     let fobj = |x: &LsVec<f64, Vec<f64>>| {
         let wgt = deflattern_quarter_wgt(&x.0, h, w);
-        let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside);
+        let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside, odd);
         let total_beam: Vec<_> = array_beam
             .iter()
             .zip(ant_beam.iter())
@@ -195,8 +197,8 @@ fn main() {
 
     let mut pso_solver = ParticleSwarmMaximizer::new(
         &fobj,
-        &LsVec(vec![0.0; h * w / 4 - 1]),
-        &LsVec(vec![1.0; h * w / 4 - 1]),
+        &LsVec(vec![0.0; (h+1)/2*((w+1)/2)-1]),
+        &LsVec(vec![1.0; (h+1)/2*((w+1)/2)-1]),
         Some(guess),
         npart,
         &mut rng,
@@ -207,7 +209,7 @@ fn main() {
             opt_weights = gbest.position.0.clone();
 
             let wgt = deflattern_quarter_wgt(&opt_weights, h, w);
-            let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside);
+            let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside, odd);
             let total_beam: Vec<_> = array_beam
                 .iter()
                 .zip(ant_beam.iter())
@@ -232,7 +234,7 @@ fn main() {
         pso_solver.sample(&mut rng, 0.75, 0.5, 1.);
     }
 
-    let wgt = quarter2full(deflattern_quarter_wgt(&opt_weights, h, w).view());
+    let wgt = quarter2full(deflattern_quarter_wgt(&opt_weights, h, w).view(), odd);
     write_img(
         matches.value_of("out_wgt").unwrap().to_string(),
         &wgt.into_dyn(),

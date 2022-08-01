@@ -1,4 +1,5 @@
 #![cfg(not(target_family = "wasm"))]
+#![allow(unused_imports)]
 extern crate dbf_beam_simulator;
 
 use ndarray::s;
@@ -12,6 +13,7 @@ use healpix_fits::write_map;
 use dbf_beam_simulator::regular_array::{pattern2wgt, quarter_wgt2pattern, wgt2pattern};
 
 fn main() {
+    /*
     let nside = 128;
     let array_size = 8;
     let d = 1.5;
@@ -39,4 +41,5 @@ fn main() {
     write_img("wgt.fits".to_string(), &wgt.into_dyn()).unwrap();
     write_map("pattern1.fits", &[&pattern1], false, true);
     write_map("pattern2.fits", &[&pattern2], false, true);
+    */
 }

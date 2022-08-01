@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 
-use std::{array, collections::BTreeMap, fs::File, io::Write};
+use std::{collections::BTreeMap, fs::File};
 
 use serde_yaml::to_writer;
 
@@ -51,7 +51,7 @@ pub fn get_ants(array_size: usize) -> Vec<(isize, isize)> {
     result
 }
 
-pub fn sort_ants_by_grade(ants: &[(isize, isize)]) -> Vec<((isize, isize))> {
+pub fn sort_ants_by_grade(ants: &[(isize, isize)]) -> Vec<(isize, isize)> {
     let baseline = get_baseline(ants);
     let mut result = vec![0; ants.len()];
     for (i, a1) in ants.iter().enumerate() {
@@ -74,7 +74,7 @@ pub fn sort_ants_by_grade(ants: &[(isize, isize)]) -> Vec<((isize, isize))> {
 }
 
 pub fn trim_ants(ants: &[(isize, isize)]) -> Vec<(isize, isize)> {
-    let nants = ants.len();
+    //let nants = ants.len();
     let mut sorted_ants = sort_ants_by_grade(ants);
     let bl = get_baseline(ants);
     loop {
@@ -137,5 +137,5 @@ fn main() {
         trimed_bl: trimed_bl
     };
 
-    to_writer(&mut outfile, &cfg);
+    to_writer(&mut outfile, &cfg).unwrap();
 }

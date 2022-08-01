@@ -109,8 +109,10 @@ fn main() {
         .parse::<f64>()
         .unwrap();
 
+    let odd=h%2==1;
+
     let array_beam =
-        quarter_wgt2pattern(wgt.slice(s![h / 2..h, w / 2..w]).view(), d, freq_mhz, nside);
+        quarter_wgt2pattern(wgt.slice(s![h / 2..h, w / 2..w]).view(), d, freq_mhz, nside, odd);
 
     let mut total_beam: Vec<_> = array_beam
         .iter()

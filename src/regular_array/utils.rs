@@ -9,7 +9,7 @@ where
     full.slice(s![h / 2..h, w / 2..w]).to_owned()
 }
 
-pub fn quarter2full<T>(quarter: ArrayView2<T>) -> Array2<T>
+pub fn quarter2full<T>(quarter: ArrayView2<T>, odd: bool) -> Array2<T>
 where
     T: Copy + Default,
 {
@@ -17,13 +17,25 @@ where
     let w = quarter.shape()[1] * 2;
     let mut full = Array2::<T>::default((h, w));
     full.slice_mut(s![h / 2..h, w / 2..w]).assign(&quarter);
-    full.slice_mut(s![1..h/2;-1, 1..w/2;-1])
-        .assign(&quarter.slice(s![1..h / 2, 1..w / 2]));
-    full.slice_mut(s![h/2..h, 1..w/2;-1])
-        .assign(&quarter.slice(s![.., 1..w / 2]));
-    full.slice_mut(s![1..h/2;-1, w/2..w])
-        .assign(&quarter.slice(s![1..h / 2, ..]));
-    full
+
+    if !odd {
+        full.slice_mut(s![..h/2;-1, ..w/2;-1])
+            .assign(&quarter.slice(s![..h / 2, ..w / 2]));
+        full.slice_mut(s![h/2..h, ..w/2;-1])
+            .assign(&quarter.slice(s![.., ..w / 2]));
+        full.slice_mut(s![..h/2;-1, w/2..w])
+            .assign(&quarter.slice(s![..h / 2, ..]));
+        full
+    } else {
+        full.slice_mut(s![1..h/2;-1, 1..w/2;-1])
+            .assign(&quarter.slice(s![1..h / 2, 1..w / 2]));
+        full.slice_mut(s![h/2..h, 1..w/2;-1])
+            .assign(&quarter.slice(s![.., 1..w / 2]));
+        full.slice_mut(s![1..h/2;-1, w/2..w])
+            .assign(&quarter.slice(s![1..h / 2, ..]));
+        full.slice(s![1.., 1..]).to_owned()
+    }
+    
 }
 
 pub fn flattern_quarter_wgt(wgt: ArrayView2<f64>) -> Vec<f64> {
@@ -32,7 +44,11 @@ pub fn flattern_quarter_wgt(wgt: ArrayView2<f64>) -> Vec<f64> {
 
 pub fn deflattern_quarter_wgt(wgt: &[f64], h: usize, w: usize) -> Array2<f64> {
     let one = [1.0];
+    if wgt.len()+1!=(h+1)/2*((w+1)/2)
+    {
+        println!("{} {} {}", wgt.len()+1, h, w);
+    }
     Array1::from_iter(one.iter().chain(wgt.iter()).cloned())
-        .into_shape((h / 2, w / 2))
+        .into_shape(((h+1) / 2, (w+1) / 2))
         .unwrap()
 }

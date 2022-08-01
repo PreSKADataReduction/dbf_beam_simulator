@@ -5,7 +5,7 @@ use std::f64::consts::PI;
 
 use num::complex::Complex;
 
-use ndarray::{Array2, ArrayView2};
+use ndarray::{s, Array2, ArrayView2};
 
 use crate::fft::{fft2, fftshift2};
 
@@ -129,19 +129,25 @@ pub fn design_square_array(
     fftshift2(wgt.view())
 }
 
-pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize) -> Array2<f64> {
+pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n1: isize) -> Array2<f64> {
+    let n = if n1 % 2 == 1 { n1 + 1 } else { n1 };
     let npix = hp.len();
     let nside = npix2nside(npix);
-    let center = n / 2;
+    let center = if n1 % 2 == 1 {
+        n as f64 / 2.0
+    } else {
+        n as f64 / 2.0 - 0.5
+    };
     let lbd = LIGHT_SPEED / (freq_mhz * 1e6);
     let u = d / lbd;
+
     let mut projected = Array2::<Complex<f64>>::zeros((n as usize, n as usize));
 
     for i in 0..n {
-        let fx = (i as f64 - center as f64) / n as f64;
+        let fx = (i as f64 - center) / n as f64;
         let nx = fx / u;
         for j in 0..n {
-            let fy = (j as f64 - center as f64) / n as f64;
+            let fy = (j as f64 - center) / n as f64;
             let ny = fy / u;
             let r2 = nx.powi(2) + ny.powi(2);
             if r2 > 1.0 {
@@ -165,7 +171,12 @@ pub fn pattern2wgt(hp: &[f64], d: f64, freq_mhz: f64, n: isize) -> Array2<f64> {
     let norm = wgt[(0, 0)].re;
     let mut wgt = wgt.map(|x| x.re);
     wgt.iter_mut().for_each(|x| *x /= norm);
-    fftshift2(wgt.view())
+    let result = fftshift2(wgt.view());
+    if n1 % 2 == 1 {
+        result.slice(s![1.., 1..]).to_owned()
+    } else {
+        result
+    }
 }
 
 pub fn wgt2pattern(wgt: ArrayView2<f64>, d: f64, freq_mhz: f64, nside: usize) -> Vec<f64> {
@@ -178,10 +189,10 @@ pub fn wgt2pattern(wgt: ArrayView2<f64>, d: f64, freq_mhz: f64, nside: usize) ->
                 let Vec3d { x: nx, y: ny, z: _ } = pix2vec_ring::<f64>(nside, ipix);
                 let mut p = Complex::<f64>::new(0.0, 0.0);
                 for i in 0..wgt.shape()[0] {
-                    let m = (i as isize - wgt.shape()[0] as isize / 2) as f64;
+                    let m = i as f64 - (wgt.shape()[0] - 1) as f64 / 2.0;
                     for j in 0..wgt.shape()[1] {
                         let w = wgt[(i, j)];
-                        let n = (j as isize - wgt.shape()[1] as isize / 2) as f64;
+                        let n = j as f64 - (wgt.shape()[1] - 1) as f64 / 2.0;
                         p += Complex::<f64>::from_polar(w, 2.0 * PI * (m * u * nx + n * u * ny));
                     }
                 }
@@ -198,6 +209,7 @@ pub fn quarter_wgt2pattern(
     d: f64,
     freq_mhz: f64,
     nside: usize,
+    odd: bool,
 ) -> Vec<f64> {
     let npix = nside2npix(nside);
     let lbd = LIGHT_SPEED / (freq_mhz * 1e6);
@@ -210,11 +222,16 @@ pub fn quarter_wgt2pattern(
                 for i in 0..quarter_wgt.shape()[0] {
                     for j in 0..quarter_wgt.shape()[1] {
                         let w = quarter_wgt[(i, j)];
-                        p += w
-                            * (2.0 * PI * i as f64 * u * nx).cos()
-                            * (2.0 * PI * j as f64 * u * ny).cos()
-                            * if i == 0 { 1.0 } else { 2.0 }
-                            * if j == 0 { 1.0 } else { 2.0 };
+                        p += w * if !odd {
+                            (2.0 * PI * (i as f64 + 0.5) * u * nx).cos()
+                                * (2.0 * PI * (j as f64 + 0.5) * u * ny).cos()
+                                * 4.0
+                        } else {
+                            (2.0 * PI * (i as f64) * u * nx).cos()
+                                * (2.0 * PI * (j as f64) * u * ny).cos()
+                                * if i == 0 { 1.0 } else { 2.0 }
+                                * if j == 0 { 1.0 } else { 2.0 }
+                        };
                     }
                 }
                 p.powi(2)

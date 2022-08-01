@@ -3,7 +3,6 @@ extern crate dbf_beam_simulator;
 
 use clap::{Arg, Command};
 
-use ndarray::s;
 
 use fitsimg::write_img;
 
@@ -136,9 +135,8 @@ fn main() {
         }
     });
 
-    let mut wgt = pattern2wgt(&array_beam, d, freq_mhz, array_size);
-    wgt.slice_mut(s![0, ..]).fill(0.0);
-    wgt.slice_mut(s![.., 0]).fill(0.0);
+    let wgt = pattern2wgt(&array_beam, d, freq_mhz, array_size);
+    
     //let pattern2=quarter_wgt2pattern(
     //     wgt.slice(s![array_size/2..array_size, array_size/2..array_size]).view()
     //     , d, freq_mhz, nside);
