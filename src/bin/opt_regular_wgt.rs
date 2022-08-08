@@ -162,13 +162,12 @@ fn main() {
         .parse::<f64>()
         .unwrap();
 
-    let odd=wgt.shape()[0]%2==1;
     let wgt_eff = full2quarter(wgt.view());
     println!("{:?}",wgt_eff.shape());
 
     let fobj = |x: &LsVec<f64, Vec<f64>>| {
         let wgt = deflattern_quarter_wgt(&x.0, h, w);
-        let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside, odd);
+        let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside);
         let total_beam: Vec<_> = array_beam
             .iter()
             .zip(ant_beam.iter())
@@ -209,7 +208,7 @@ fn main() {
             opt_weights = gbest.position.0.clone();
 
             let wgt = deflattern_quarter_wgt(&opt_weights, h, w);
-            let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside, odd);
+            let array_beam = quarter_wgt2pattern(wgt.view(), d, freq_mhz, nside);
             let total_beam: Vec<_> = array_beam
                 .iter()
                 .zip(ant_beam.iter())
@@ -234,7 +233,7 @@ fn main() {
         pso_solver.sample(&mut rng, 0.75, 0.5, 1.);
     }
 
-    let wgt = quarter2full(deflattern_quarter_wgt(&opt_weights, h, w).view(), odd);
+    let wgt = quarter2full(deflattern_quarter_wgt(&opt_weights, h, w).view());
     write_img(
         matches.value_of("out_wgt").unwrap().to_string(),
         &wgt.into_dyn(),

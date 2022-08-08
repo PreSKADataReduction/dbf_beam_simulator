@@ -209,7 +209,6 @@ pub fn quarter_wgt2pattern(
     d: f64,
     freq_mhz: f64,
     nside: usize,
-    odd: bool,
 ) -> Vec<f64> {
     let npix = nside2npix(nside);
     let lbd = LIGHT_SPEED / (freq_mhz * 1e6);
@@ -222,16 +221,12 @@ pub fn quarter_wgt2pattern(
                 for i in 0..quarter_wgt.shape()[0] {
                     for j in 0..quarter_wgt.shape()[1] {
                         let w = quarter_wgt[(i, j)];
-                        p += w * if !odd {
-                            (2.0 * PI * (i as f64 + 0.5) * u * nx).cos()
-                                * (2.0 * PI * (j as f64 + 0.5) * u * ny).cos()
-                                * 4.0
-                        } else {
+                        p += w *  
                             (2.0 * PI * (i as f64) * u * nx).cos()
                                 * (2.0 * PI * (j as f64) * u * ny).cos()
                                 * if i == 0 { 1.0 } else { 2.0 }
                                 * if j == 0 { 1.0 } else { 2.0 }
-                        };
+                        ;
                     }
                 }
                 p.powi(2)

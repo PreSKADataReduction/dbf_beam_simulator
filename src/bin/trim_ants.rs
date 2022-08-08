@@ -77,13 +77,35 @@ pub fn trim_ants(ants: &[(isize, isize)]) -> Vec<(isize, isize)> {
     //let nants = ants.len();
     let mut sorted_ants = sort_ants_by_grade(ants);
     let bl = get_baseline(ants);
-    loop {
+    let mut sorted_ants=loop {
+        println!("{}", sorted_ants.len());
         let bl1 = get_baseline(&sorted_ants[..sorted_ants.len() - 1]);
         if bl1.len() != bl.len() {
             break sorted_ants;
         }
         sorted_ants.pop();
+    };
+
+    
+    loop{
+        let mut excluded_idx=-1;
+        for i in (0..sorted_ants.len()).rev(){
+            let excluded=sorted_ants[..i].iter().chain(sorted_ants[i+1..].iter()).cloned().collect::<Vec<_>>();
+            let bl1=get_baseline(&excluded);
+            if bl1.len()==bl.len(){
+                excluded_idx=i as isize;
+                break;
+            }
+        }
+        if excluded_idx!=-1{
+            let excluded_idx=excluded_idx as usize;
+            sorted_ants=sorted_ants[..excluded_idx].iter().chain(sorted_ants[excluded_idx+1..].iter()).cloned().collect::<Vec<_>>();
+        }else{
+            break;
+        }        
     }
+
+    sorted_ants
 }
 
 fn main() {

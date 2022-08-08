@@ -9,7 +9,7 @@ where
     full.slice(s![h / 2..h, w / 2..w]).to_owned()
 }
 
-pub fn quarter2full<T>(quarter: ArrayView2<T>, odd: bool) -> Array2<T>
+pub fn quarter2full<T>(quarter: ArrayView2<T>) -> Array2<T>
 where
     T: Copy + Default,
 {
@@ -18,23 +18,15 @@ where
     let mut full = Array2::<T>::default((h, w));
     full.slice_mut(s![h / 2..h, w / 2..w]).assign(&quarter);
 
-    if !odd {
-        full.slice_mut(s![..h/2;-1, ..w/2;-1])
-            .assign(&quarter.slice(s![..h / 2, ..w / 2]));
-        full.slice_mut(s![h/2..h, ..w/2;-1])
-            .assign(&quarter.slice(s![.., ..w / 2]));
-        full.slice_mut(s![..h/2;-1, w/2..w])
-            .assign(&quarter.slice(s![..h / 2, ..]));
-        full
-    } else {
-        full.slice_mut(s![1..h/2;-1, 1..w/2;-1])
-            .assign(&quarter.slice(s![1..h / 2, 1..w / 2]));
-        full.slice_mut(s![h/2..h, 1..w/2;-1])
-            .assign(&quarter.slice(s![.., 1..w / 2]));
-        full.slice_mut(s![1..h/2;-1, w/2..w])
-            .assign(&quarter.slice(s![1..h / 2, ..]));
-        full.slice(s![1.., 1..]).to_owned()
-    }
+    
+    full.slice_mut(s![1..h/2;-1, 1..w/2;-1])
+        .assign(&quarter.slice(s![1..h / 2, 1..w / 2]));
+    full.slice_mut(s![h/2..h, 1..w/2;-1])
+        .assign(&quarter.slice(s![.., 1..w / 2]));
+    full.slice_mut(s![1..h/2;-1, w/2..w])
+        .assign(&quarter.slice(s![1..h / 2, ..]));
+    full.slice(s![1.., 1..]).to_owned()
+
     
 }
 
