@@ -20,7 +20,7 @@ pub fn main() {
         pos:(0.0, 0.0, 0.0)
     };
     let array_cfg=ArrayCfg{
-        ants:vec![ant_cfg.clone(), ant_cfg.clone()]
+        ants:vec![ant_cfg.clone(), ant_cfg]
     };
 
     let mut outfile=File::create("a.yaml").unwrap();

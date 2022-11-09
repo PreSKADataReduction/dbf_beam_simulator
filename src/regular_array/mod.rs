@@ -19,7 +19,7 @@ use scorus::{
 };
 
 pub use crate::{
-    arbitrary_array::{calc_array_beam, calc_averaged_array_beam, calc_phase_from_pointing},
+    arbitrary_array::{calc_averaged_array_beam},
     constants::LIGHT_SPEED,
     utils::{averaged_beam_to_healpix, integrate_az},
 };

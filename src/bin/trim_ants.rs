@@ -42,9 +42,9 @@ pub fn get_ants(array_size: usize) -> Vec<(isize, isize)> {
     let array_size = array_size as isize;
     //assert!(array_size % 2 == 0);
     let mut result = Vec::new();
-    for i in (-(array_size + 0) / 2)..(array_size + 1) / 2 {
+    for i in (-(array_size ) / 2)..(array_size + 1) / 2 {
         //println!("{}", i);
-        for j in (-(array_size + 0) / 2)..(array_size + 1) / 2 {
+        for j in (-(array_size ) / 2)..(array_size + 1) / 2 {
             result.push((i, j));
         }
     }
@@ -156,7 +156,7 @@ fn main() {
         full_array: ants,
         full_bl: bl,
         trimed_array: trimed,
-        trimed_bl: trimed_bl
+        trimed_bl
     };
 
     to_writer(&mut outfile, &cfg).unwrap();
